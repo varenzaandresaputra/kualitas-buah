@@ -192,12 +192,22 @@ elif menu == "Latih & Evaluasi Model":
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size/100, random_state=42, stratify=y)
     
-    # Melatih model Gaussian Naive Bayes
-    model = GaussianNB()
-    model.fit(X_train, y_train)
+    # Cek apakah model sudah ada di session state, jika tidak, latih dan simpan
+    if 'trained_model' not in st.session_state or st.session_state.test_size != test_size:
+        st.session_state.test_size = test_size
+        # Melatih model Gaussian Naive Bayes
+        model = GaussianNB()
+        model.fit(X_train, y_train)
+        # Simpan model yang telah dilatih ke dalam session state
+        st.session_state.trained_model = model
+        st.session_state.X_test = X_test
+        st.session_state.y_test = y_test
+    
+    # Ambil model dan data uji dari session state
+    model = st.session_state.trained_model
     
     # Prediksi data uji
-    y_pred = model.predict(X_test)
+    y_pred = model.predict(st.session_state.X_test)
     akurasi = accuracy_score(y_test, y_pred)
     
     col1, col2 = st.columns(2)
@@ -226,11 +236,11 @@ elif menu == "Prediksi Interaktif (Uji Coba)":
     st.title("🔬 Prediksi Kualitas Buah Interaktif")
     st.write("Sesuaikan spesifikasi apel di bawah ini, dan lihat apakah algoritma mengklasifikasikannya sebagai **Baik** atau **Buruk**!")
     
-    # Melatih model pada seluruh dataset untuk prediksi optimal
+    # Gunakan model yang dilatih pada seluruh dataset untuk prediksi optimal
     X_full = df_processed.drop(columns=['Kualitas'])
     y_full = df_processed['Kualitas']
-    model = GaussianNB()
-    model.fit(X_full, y_full)
+    model_full = GaussianNB()
+    model_full.fit(X_full, y_full)
     
     # 1. FORM INPUT USER
     col1, col2 = st.columns(2)
@@ -263,8 +273,8 @@ elif menu == "Prediksi Interaktif (Uji Coba)":
     # Membuat DataFrame dari input dengan urutan kolom yang benar
     input_df = pd.DataFrame(data_input_array, columns=feature_order)
     
-    prediksi = model.predict(input_df)[0]
-    probabilitas = model.predict_proba(input_df)[0]
+    prediksi = model_full.predict(input_df)[0]
+    probabilitas = model_full.predict_proba(input_df)[0]
     
     # Menampilkan Hasil Prediksi
     st.markdown("---")
@@ -282,7 +292,7 @@ elif menu == "Prediksi Interaktif (Uji Coba)":
     with col_res2:
         # Tampilkan grafik probabilitas klasifikasi
         # Cari index kelas 'Baik' dan 'Buruk' dari model
-        class_order = list(model.classes_)
+        class_order = list(model_full.classes_)
         prob_baik_idx = class_order.index('Baik')
         prob_buruk_idx = class_order.index('Buruk')
         
