@@ -28,42 +28,50 @@ def load_default_data():
     np.random.seed(42)
     n_samples = 200
     
-    # Buah Kualitas Baik (Manis tinggi, asam rendah, ukuran sedang-besar, berat ideal)
+    # Buah Kualitas Baik (Sedikit bintik, ukuran & berat ideal, warna bervariasi)
     baik_diameter = np.random.normal(8.0, 1.2, int(n_samples/2))
     baik_berat = np.random.normal(180, 25, int(n_samples/2))
-    baik_kemanisan = np.random.normal(8.0, 1.0, int(n_samples/2))
-    baik_keasaman = np.random.normal(3.0, 0.8, int(n_samples/2))
+    # Apel baik: 60% Merah (matang), 20% Hijau (jenis Granny Smith), 20% Kuning (jenis Golden)
+    baik_warna = np.random.choice(['Merah', 'Hijau', 'Kuning'], size=int(n_samples/2), p=[0.6, 0.2, 0.2])
+    baik_persentase_bintik = np.random.normal(5, 5, int(n_samples/2))
     
-    # Buah Kualitas Buruk (Kemanisan rendah, keasaman tinggi, ukuran terlalu kecil/besar acak)
+    # Buah Kualitas Buruk (Banyak bintik, ukuran & berat tidak ideal)
     buruk_diameter = np.random.normal(5.5, 1.5, int(n_samples/2))
     buruk_berat = np.random.normal(120, 35, int(n_samples/2))
-    buruk_kemanisan = np.random.normal(4.0, 1.5, int(n_samples/2))
-    buruk_keasaman = np.random.normal(7.0, 1.5, int(n_samples/2))
+    # Apel buruk bisa warna apa saja, tapi memiliki banyak bintik/kerusakan
+    buruk_warna = np.random.choice(['Hijau', 'Kuning', 'Merah'], size=int(n_samples/2), p=[0.4, 0.4, 0.2])
+    buruk_persentase_bintik = np.random.normal(40, 15, int(n_samples/2))
     
     data_baik = pd.DataFrame({
         'Diameter (cm)': baik_diameter,
         'Berat (gram)': baik_berat,
-        'Kemanisan (Skala 1-10)': baik_kemanisan,
-        'Keasaman (Skala 1-10)': baik_keasaman,
+        'Warna': baik_warna,
+        'Persentase Bintik (%)': baik_persentase_bintik,
         'Kualitas': 'Baik'
     })
     
     data_buruk = pd.DataFrame({
         'Diameter (cm)': buruk_diameter,
         'Berat (gram)': buruk_berat,
-        'Kemanisan (Skala 1-10)': buruk_kemanisan,
-        'Keasaman (Skala 1-10)': buruk_keasaman,
+        'Warna': buruk_warna,
+        'Persentase Bintik (%)': buruk_persentase_bintik,
         'Kualitas': 'Buruk'
     })
     
     df = pd.concat([data_baik, data_buruk], ignore_index=True)
-    # Batasi nilai skala kemanisan/keasaman agar tetap di rentang 1-10
-    df['Kemanisan (Skala 1-10)'] = df['Kemanisan (Skala 1-10)'].clip(1.0, 10.0)
-    df['Keasaman (Skala 1-10)'] = df['Keasaman (Skala 1-10)'].clip(1.0, 10.0)
+    # Batasi nilai agar tetap di rentang yang logis
+    df['Persentase Bintik (%)'] = df['Persentase Bintik (%)'].clip(0, 100)
     return df
 
 # Memuat data
-df = load_default_data()
+df_original = load_default_data()
+
+# PREPROCESSING: Mengubah data kategorikal (Warna) menjadi numerik dengan One-Hot Encoding
+df_processed = pd.get_dummies(df_original, columns=['Warna'], drop_first=False)
+# Pastikan semua kolom warna ada, bahkan jika tidak ada di data sampel
+for color in ['Warna_Hijau', 'Warna_Merah', 'Warna_Kuning']:
+    if color not in df_processed.columns:
+        df_processed[color] = 0
 
 # ==========================================
 # SIDEBAR - NAVIGASI DAN INFORMASI KELOMPOK
@@ -71,11 +79,11 @@ df = load_default_data()
 with st.sidebar:
     # Menggunakan try-except untuk load gambar agar tidak crash jika offline
     try:
-        st.image("[https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?auto=format&fit=crop&q=80&w=300](https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?auto=format&fit=crop&q=80&w=300)", caption="Klasifikasi Buah", use_container_width=True)
+        st.image("apel.jpg", caption="Klasifikasi Apel", use_container_width=True)
     except Exception:
-        st.subheader("🍎 Klasifikasi Buah")
+        st.subheader("🍎 Klasifikasi Apel")
         
-    st.title("🍎 Kelompok 4")
+    st.title("🍎 Kelompok 4 (Apel)")
     st.subheader("Studi Kasus: Kualitas Buah")
     st.markdown("---")
     
@@ -100,20 +108,19 @@ with st.sidebar:
 # HALAMAN 1: DASHBOARD & TEORI NAIVE BAYES
 # ==========================================
 if menu == "Dashboard & Teori":
-    st.title("🎯 Aplikasi Klasifikasi Kualitas Buah Menggunakan Naive Bayes")
+    st.title("🎯 Aplikasi Klasifikasi Kualitas Apel Menggunakan Naive Bayes")
     st.subheader("Selamat Datang di Projek Proyek Kelompok 4")
     
     st.markdown("""
-    Aplikasi ini dirancang untuk mengklasifikasikan kualitas buah (Kategori: **Baik** atau **Buruk**) berdasarkan fitur fisik luar dan rasa buah. 
+    Aplikasi ini dirancang untuk mengklasifikasikan kualitas buah apel (Kategori: **Baik** atau **Buruk**) berdasarkan fitur fisiknya. 
     Metode yang kita gunakan adalah **Gaussian Naive Bayes**, yang sangat cocok untuk mengolah data fitur kontinu (numerik).
     """)
     
     col1, col2 = st.columns(2)
     with col1:
         st.info("### 📌 Mengapa Studi Kasus Kualitas Buah?\n"
-                "Dalam industri pertanian dan pangan, menyortir buah berkualitas tinggi dari yang rusak secara manual memerlukan banyak waktu dan tenaga. "
-                "Dengan memanfaatkan algoritma Machine Learning seperti Naive Bayes, proses penyortiran dapat diotomatisasi secara cepat berdasarkan berat, ukuran, "
-                "tingkat kemanisan (menggunakan sensor brix), dan tingkat keasaman (sensor pH).")
+                "Dalam industri pertanian, menyortir buah berkualitas tinggi dari yang rusak secara manual memerlukan banyak waktu. "
+                "Dengan Machine Learning, proses penyortiran dapat diotomatisasi secara cepat berdasarkan fitur visual seperti **ukuran, berat, warna (matang/tidak), dan ada tidaknya kerusakan (bintik)** yang bisa dideteksi oleh sensor atau kamera.")
         
     with col2:
         st.warning("### 🧪 Apa itu Algoritma Naive Bayes?\n"
@@ -138,27 +145,38 @@ if menu == "Dashboard & Teori":
 # HALAMAN 2: EKSPLORASI DATASET
 # ==========================================
 elif menu == "Eksplorasi Data":
-    st.title("📊 Eksplorasi Data Kualitas Buah")
-    st.write("Di bawah ini adalah data sampel yang kita gunakan untuk melatih kecerdasan buatan dalam membedakan buah yang baik dan buruk.")
+    st.title("📊 Eksplorasi Data Kualitas Apel")
+    st.write("Di bawah ini adalah data sampel yang kita gunakan untuk melatih model. Perhatikan bagaimana fitur 'Warna' diubah menjadi kolom numerik `Warna_Hijau`, `Warna_Merah`, dan `Warna_Kuning`.")
     
-    st.write("### 📂 Data Table (200 Sampel Buah)")
-    st.dataframe(df, use_container_width=True)
+    st.write("### 📂 Data Table Asli (Sebelum Encoding)")
+    st.dataframe(df_original, use_container_width=True)
+    
+    st.write("### 📂 Data Table Siap Proses (Setelah One-Hot Encoding)")
+    st.dataframe(df_processed, use_container_width=True)
     
     # Statistik Deskriptif
     st.write("### 📈 Ringkasan Statistik Berdasarkan Kualitas Buah")
-    st.write(df.groupby('Kualitas').mean())
+    st.write(df_original.groupby('Kualitas').describe(include='all'))
     
     # Visualisasi Distribusi Fitur
     st.write("### 🖼️ Visualisasi Hubungan Antar Fitur")
-    fitur_pilihan = st.selectbox("Pilih Fitur yang Ingin Dilihat Distribusinya:", df.columns[:-1])
     
-    fig, ax = plt.subplots(figsize=(10, 4))
-    sns.kdeplot(data=df, x=fitur_pilihan, hue="Kualitas", fill=True, common_norm=False, palette="Set1", alpha=0.5, ax=ax)
-    plt.title(f"Distribusi Fitur: {fitur_pilihan} berdasarkan Kualitas Buah")
-    st.pyplot(fig)
-    plt.close(fig) # Menutup plot untuk membebaskan memori
+    col1, col2 = st.columns(2)
+    with col1:
+        fig, ax = plt.subplots()
+        sns.countplot(data=df_original, x='Warna', hue='Kualitas', palette='Set1', ax=ax, order=['Merah', 'Hijau', 'Kuning'])
+        plt.title("Distribusi Warna berdasarkan Kualitas")
+        st.pyplot(fig)
+        plt.close(fig)
     
-    st.success("💡 **Observasi Singkat:** Buah berkualitas 'Baik' cenderung memiliki tingkat kemanisan yang lebih tinggi dan tingkat keasaman yang lebih rendah dibandingkan buah berkualitas 'Buruk'.")
+    with col2:
+        fig, ax = plt.subplots()
+        sns.kdeplot(data=df_original, x='Persentase Bintik (%)', hue="Kualitas", fill=True, common_norm=False, palette="Set1", alpha=0.5, ax=ax)
+        plt.title("Distribusi Persentase Bintik berdasarkan Kualitas")
+        st.pyplot(fig)
+        plt.close(fig)
+    
+    st.success("💡 **Observasi Singkat:** Apel berkualitas 'Baik' cenderung memiliki **Persentase Bintik** yang rendah, terlepas dari warnanya. Sebaliknya, apel 'Buruk' memiliki banyak bintik.")
 
 # ==========================================
 # HALAMAN 3: PELATIHAN DAN EVALUASI MODEL
@@ -166,14 +184,13 @@ elif menu == "Eksplorasi Data":
 elif menu == "Latih & Evaluasi Model":
     st.title("⚙️ Proses Pelatihan & Evaluasi Naive Bayes")
     
-    # Memisahkan Fitur dan Target
-    X = df.drop(columns=['Kualitas'])
-    y = df['Kualitas']
+    # Memisahkan Fitur dan Target dari data yang sudah diproses
+    X = df_processed.drop(columns=['Kualitas'])
+    y = df_processed['Kualitas']
     
-    # Slider untuk menentukan ukuran porsi data latih (Train-Test Split)
     test_size = st.slider("Pilih Persentase Data Uji (Test Set %):", min_value=10, max_value=50, value=20, step=5)
     
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size/100, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size/100, random_state=42, stratify=y)
     
     # Melatih model Gaussian Naive Bayes
     model = GaussianNB()
@@ -190,7 +207,7 @@ elif menu == "Latih & Evaluasi Model":
         
     with col2:
         st.write("### 🔍 Confusion Matrix")
-        cm = confusion_matrix(y_test, y_pred)
+        cm = confusion_matrix(y_test, y_pred, labels=['Baik', 'Buruk'])
         fig, ax = plt.subplots(figsize=(5, 4))
         sns.heatmap(cm, annot=True, fmt='d', cmap='Greens', xticklabels=['Baik', 'Buruk'], yticklabels=['Baik', 'Buruk'], ax=ax)
         plt.xlabel('Prediksi Model')
@@ -199,8 +216,7 @@ elif menu == "Latih & Evaluasi Model":
         plt.close(fig)
         
     st.write("### 📝 Laporan Klasifikasi Detil (Classification Report)")
-    report_dict = classification_report(y_test, y_pred, output_dict=True)
-    report_df = pd.DataFrame(report_dict).transpose()
+    report_df = pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose()
     st.dataframe(report_df, use_container_width=True)
 
 # ==========================================
@@ -208,30 +224,47 @@ elif menu == "Latih & Evaluasi Model":
 # ==========================================
 elif menu == "Prediksi Interaktif (Uji Coba)":
     st.title("🔬 Prediksi Kualitas Buah Interaktif")
-    st.write("Sesuaikan spesifikasi buah di bawah ini menggunakan slider, dan lihat apakah algoritma Naive Bayes mengklasifikasikannya sebagai buah **Baik** atau **Buruk**!")
+    st.write("Sesuaikan spesifikasi apel di bawah ini, dan lihat apakah algoritma mengklasifikasikannya sebagai **Baik** atau **Buruk**!")
     
     # Melatih model pada seluruh dataset untuk prediksi optimal
-    X = df.drop(columns=['Kualitas'])
-    y = df['Kualitas']
+    X_full = df_processed.drop(columns=['Kualitas'])
+    y_full = df_processed['Kualitas']
     model = GaussianNB()
-    model.fit(X, y)
+    model.fit(X_full, y_full)
     
     # 1. FORM INPUT USER
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown("### 📥 Spesifikasi Fisik Buah:")
-        input_diameter = st.slider("Diameter Buah (cm)", min_value=3.0, max_value=15.0, value=7.5, step=0.1)
-        input_berat = st.slider("Berat Buah (gram)", min_value=50.0, max_value=300.0, value=160.0, step=1.0)
+        st.markdown("### 📥 Spesifikasi Fisik Apel:")
+        input_diameter = st.slider("Diameter Apel (cm)", min_value=3.0, max_value=15.0, value=8.0, step=0.1)
+        input_berat = st.slider("Berat Apel (gram)", min_value=50.0, max_value=300.0, value=180.0, step=1.0)
         
     with col2:
-        st.markdown("### 👅 Spesifikasi Rasa Buah:")
-        input_kemanisan = st.slider("Tingkat Kemanisan (Skala 1 - 10)", min_value=1.0, max_value=10.0, value=7.0, step=0.1)
-        input_keasaman = st.slider("Tingkat Keasaman (Skala 1 - 10)", min_value=1.0, max_value=10.0, value=3.5, step=0.1)
+        st.markdown("### 🎨 Spesifikasi Warna & Kondisi:")
+        input_warna = st.radio("Pilih Warna Apel:", ('Merah', 'Hijau', 'Kuning'), horizontal=True)
+        input_persentase_bintik = st.slider("Persentase Bintik (%)", min_value=0, max_value=100, value=5, step=1)
         
-    # Menyiapkan array data baru
-    data_input = np.array([[input_diameter, input_berat, input_kemanisan, input_keasaman]])
-    prediksi = model.predict(data_input)[0]
-    probabilitas = model.predict_proba(data_input)[0] # [Probabilitas Baik, Probabilitas Buruk]
+    # Menyiapkan array data baru sesuai dengan One-Hot Encoding
+    warna_merah = 1 if input_warna == 'Merah' else 0
+    warna_hijau = 1 if input_warna == 'Hijau' else 0
+    warna_kuning = 1 if input_warna == 'Kuning' else 0
+    
+    # Urutan kolom harus SAMA PERSIS dengan saat melatih model
+    feature_order = ['Diameter (cm)', 'Berat (gram)', 'Persentase Bintik (%)', 'Warna_Hijau', 'Warna_Kuning', 'Warna_Merah']
+    data_input_array = np.array([[
+        input_diameter, 
+        input_berat, 
+        input_persentase_bintik,
+        warna_hijau,
+        warna_kuning,
+        warna_merah
+    ]])
+    
+    # Membuat DataFrame dari input dengan urutan kolom yang benar
+    input_df = pd.DataFrame(data_input_array, columns=feature_order)
+    
+    prediksi = model.predict(input_df)[0]
+    probabilitas = model.predict_proba(input_df)[0]
     
     # Menampilkan Hasil Prediksi
     st.markdown("---")
@@ -240,19 +273,25 @@ elif menu == "Prediksi Interaktif (Uji Coba)":
     col_res1, col_res2 = st.columns(2)
     with col_res1:
         if prediksi == 'Baik':
-            st.success(f"### Kualitas Buah: **BAIK** 🟢")
-            st.write(f"Probabilitas Buah Berkualitas Baik: **{probabilitas[0]*100:.2f}%**")
+            st.success(f"### Kualitas Apel: **BAIK** 🟢")
+            st.write(f"Probabilitas Apel Berkualitas Baik: **{probabilitas[0]*100:.2f}%**")
         else:
-            st.error(f"### Kualitas Buah: **BURUK** 🔴")
-            st.write(f"Probabilitas Buah Berkualitas Buruk: **{probabilitas[1]*100:.2f}%**")
+            st.error(f"### Kualitas Apel: **BURUK** 🔴")
+            st.write(f"Probabilitas Apel Berkualitas Buruk: **{probabilitas[1]*100:.2f}%**")
             
     with col_res2:
         # Tampilkan grafik probabilitas klasifikasi
+        # Cari index kelas 'Baik' dan 'Buruk' dari model
+        class_order = list(model.classes_)
+        prob_baik_idx = class_order.index('Baik')
+        prob_buruk_idx = class_order.index('Buruk')
+        
+        probs_display = [probabilitas[prob_baik_idx], probabilitas[prob_buruk_idx]]
+        
         fig, ax = plt.subplots(figsize=(6, 2.5))
-        y_pos = np.arange(2)
-        ax.barh(y_pos, probabilitas * 100, color=['#4CAF50', '#F44336'], height=0.5)
-        ax.set_yticks(y_pos)
-        ax.set_yticklabels(['Baik', 'Buruk'])
+        ax.barh(np.arange(2), np.array(probs_display) * 100, color=['#4CAF50', '#F44336'], height=0.5)
+        ax.set_yticks(np.arange(2))
+        ax.set_yticklabels(class_order)
         ax.set_xlabel('Keyakinan Probabilitas (%)')
         ax.set_xlim(0, 100)
         st.pyplot(fig)
@@ -265,25 +304,29 @@ elif menu == "Prediksi Interaktif (Uji Coba)":
     st.markdown("### 🧮 Cara Kerja Matematika Naive Bayes di Balik Layar:")
     st.write("Mari kita lihat bagaimana algoritma menghitung probabilitas di atas langkah demi langkah menggunakan data yang Anda masukkan!")
     
+    # Gunakan dataset yang sudah diproses untuk kalkulasi
+    df_calc = df_processed
+
     # Hitung Prior Probabilities P(C)
-    total_samples = len(df)
-    total_baik = len(df[df['Kualitas'] == 'Baik'])
-    total_buruk = len(df[df['Kualitas'] == 'Buruk'])
+    total_samples = len(df_calc)
+    total_baik = len(df_calc[df_calc['Kualitas'] == 'Baik'])
+    total_buruk = len(df_calc[df_calc['Kualitas'] == 'Buruk'])
     
     prior_baik = total_baik / total_samples
     prior_buruk = total_buruk / total_samples
     
     st.markdown(f"#### **Langkah 1: Menghitung Probabilitas Prior (Awal)**")
-    st.write(f"Total Sampel Buah = **{total_samples}** (Baik = **{total_baik}**, Buruk = **{total_buruk}**)")
+    st.write(f"Dari total **{total_samples}** sampel data, kita punya **{total_baik}** apel 'Baik' dan **{total_buruk}** apel 'Buruk'.")
     st.latex(rf"P(\text{{Kualitas}} = \text{{Baik}}) = \frac{{{total_baik}}}{{{total_samples}}} = {prior_baik:.3f}")
     st.latex(rf"P(\text{{Kualitas}} = \text{{Buruk}}) = \frac{{{total_buruk}}}{{{total_samples}}} = {prior_buruk:.3f}")
     
     # Hitung Mean dan Variansi untuk setiap fitur pada setiap kelas
-    features = ['Diameter (cm)', 'Berat (gram)', 'Kemanisan (Skala 1-10)', 'Keasaman (Skala 1-10)']
-    input_values = [input_diameter, input_berat, input_kemanisan, input_keasaman]
+    features = list(X_full.columns)
+    input_values = data_input_array[0]
     
     st.markdown("#### **Langkah 2: Menghitung Likelihood Probabilitas Fitur Menggunakan Distribusi Normal (Gaussian)**")
-    st.write("Karena fitur kita berupa angka kontinu, Naive Bayes menggunakan rumus Distribusi Gaussian untuk mencari kecocokan nilai input Anda terhadap pola rata-rata ($\mu$) dan standar deviasi ($\sigma$) data latih.")
+    st.write("Untuk setiap fitur, kita hitung seberapa 'cocok' nilai input Anda dengan distribusi data 'Baik' dan 'Buruk' menggunakan rumus PDF Gaussian.")
+    st.latex(r"P(x_i | C_k) = \frac{1}{\sqrt{2\pi\sigma_{k,i}^2}} e^{-\frac{(x_i - \mu_{k,i})^2}{2\sigma_{k,i}^2}}")
     
     # Tabel parameter latih
     param_data = []
@@ -294,57 +337,42 @@ elif menu == "Prediksi Interaktif (Uji Coba)":
         val = input_values[i]
         
         # Kelas Baik
-        mean_b = df[df['Kualitas'] == 'Baik'][feat].mean()
-        var_b = df[df['Kualitas'] == 'Baik'][feat].var()
-        # Hindari pembagian dengan nol dengan menambahkan epsilon kecil jika variansi nol
-        var_b = max(var_b, 1e-9)
-        # Rumus Gaussian Probability Density Function
+        mean_b = df_calc[df_calc['Kualitas'] == 'Baik'][feat].mean()
+        var_b = df_calc[df_calc['Kualitas'] == 'Baik'][feat].var()
+        var_b = max(var_b, 1e-9) # Hindari variansi nol
         like_b = (1 / np.sqrt(2 * np.pi * var_b)) * np.exp(-((val - mean_b)**2) / (2 * var_b))
         likelihoods_baik.append(like_b)
         
         # Kelas Buruk
-        mean_bu = df[df['Kualitas'] == 'Buruk'][feat].mean()
-        var_bu = df[df['Kualitas'] == 'Buruk'][feat].var()
-        var_bu = max(var_bu, 1e-9)
+        mean_bu = df_calc[df_calc['Kualitas'] == 'Buruk'][feat].mean()
+        var_bu = df_calc[df_calc['Kualitas'] == 'Buruk'][feat].var()
+        var_bu = max(var_bu, 1e-9) # Hindari variansi nol
         like_bu = (1 / np.sqrt(2 * np.pi * var_bu)) * np.exp(-((val - mean_bu)**2) / (2 * var_bu))
         likelihoods_buruk.append(like_bu)
         
         param_data.append({
-            "Fitur": feat,
-            "Nilai Input": val,
-            "Rata2 (Baik)": f"{mean_b:.2f}",
-            "Variansi (Baik)": f"{var_b:.2f}",
+            "Fitur": feat, "Nilai Input": f"{val:.1f}",
             "Likelihood P(X|Baik)": f"{like_b:.5f}",
-            "Rata2 (Buruk)": f"{mean_bu:.2f}",
-            "Variansi (Buruk)": f"{var_bu:.2f}",
             "Likelihood P(X|Buruk)": f"{like_bu:.5f}"
         })
         
     st.table(pd.DataFrame(param_data))
     
-    # Langkah 3: Mengalikan Semua Likelihood dan Prior (Aman dari math.prod Python 3.7 ke bawah)
+    # Langkah 3: Mengalikan Semua Likelihood dan Prior
     total_like_baik = float(np.prod(likelihoods_baik)) * prior_baik
     total_like_buruk = float(np.prod(likelihoods_buruk)) * prior_buruk
     
-    # Normalisasi agar total probabilitas = 100%
+    # Normalisasi
     normalizer = total_like_baik + total_like_buruk
-    if normalizer == 0:
-        prob_baik_calc = 0.5
-        prob_buruk_calc = 0.5
-    else:
-        prob_baik_calc = total_like_baik / normalizer
-        prob_buruk_calc = total_like_buruk / normalizer
+    prob_baik_calc = total_like_baik / normalizer if normalizer > 0 else 0.5
+    prob_buruk_calc = total_like_buruk / normalizer if normalizer > 0 else 0.5
     
     st.markdown("#### **Langkah 3: Mengalikan Semua Probabilitas & Normalisasi**")
-    st.write("Persamaan perkalian Naive Bayes:")
-    st.latex(r"P(\text{Kelas} | X) \propto P(\text{Kelas}) \times P(\text{Diameter} | \text{Kelas}) \times P(\text{Berat} | \text{Kelas}) \times P(\text{Kemanisan} | \text{Kelas}) \times P(\text{Keasaman} | \text{Kelas})")
-    
-    st.markdown("**Hasil Perkalian Mentah (Posterior Tanpa Normalisasi):**")
-    st.latex(rf"P(\text{{Baik}} | X) \propto {prior_baik:.3f} \times {likelihoods_baik[0]:.5f} \times {likelihoods_baik[1]:.5f} \times {likelihoods_baik[2]:.5f} \times {likelihoods_baik[3]:.5f} = {total_like_baik:.2e}")
-    st.latex(rf"P(\text{{Buruk}} | X) \propto {prior_buruk:.3f} \times {likelihoods_buruk[0]:.5f} \times {likelihoods_buruk[1]:.5f} \times {likelihoods_buruk[2]:.5f} \times {likelihoods_buruk[3]:.5f} = {total_like_buruk:.2e}")
+    st.write("Kita kalikan probabilitas Prior dengan semua Likelihood untuk setiap kelas, lalu normalisasi hasilnya agar totalnya menjadi 100%.")
+    st.latex(r"P(\text{Kelas} | X) \propto P(\text{Kelas}) \times \prod_{i=1}^{n} P(x_i | \text{Kelas})")
     
     st.markdown("**Hasil Probabilitas Akhir (Setelah Normalisasi):**")
     st.latex(rf"P(\text{{Baik}}) = \frac{{{total_like_baik:.2e}}}{{{total_like_baik:.2e} + {total_like_buruk:.2e}}} = {prob_baik_calc * 100:.2f}\%")
     st.latex(rf"P(\text{{Buruk}}) = \frac{{{total_like_buruk:.2e}}}{{{total_like_baik:.2e} + {total_like_buruk:.2e}}} = {prob_buruk_calc * 100:.2f}\%")
     
-    st.info(f"👉 Kelas dengan probabilitas tertinggi dipilih oleh model. Maka hasil akhirnya adalah kelas **{prediksi.upper()}**.")
+    st.success(f"👉 Kelas dengan probabilitas tertinggi dipilih oleh model. Maka hasil akhirnya adalah kelas **{prediksi.upper()}**.")
