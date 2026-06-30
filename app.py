@@ -502,19 +502,19 @@ FRUIT_CATALOG = {
     "Nanas": {"generator": generate_pineapple_data, "icon": "🍍", "image": "nanas.jpg", "positive_outcomes": ["Matang"]},
     "Melon": {"generator": generate_melon_data, "icon": "🍈", "image": "melon.jpg", "positive_outcomes": ["Manis"]},
     "Salak": {"generator": generate_salak_data, "icon": "🌰", "image": "salak.jpg", "positive_outcomes": ["Manis"]},
-    "Rambutan": {"generator": generate_rambutan_data, "icon": " rambutan", "image": "rambutan.jpg", "positive_outcomes": ["Manis"]},
+    "Rambutan": {"generator": generate_rambutan_data, "icon": "🔴", "image": "rambutan.jpg", "positive_outcomes": ["Manis"]},
     "Pir": {"generator": generate_pear_data, "icon": "🍐", "image": "pir.jpg", "positive_outcomes": ["Matang"]},
-    "Manggis": {"generator": generate_mangosteen_data, "icon": " Manggis", "image": "manggis.jpg", "positive_outcomes": ["Manis"]},
-    "Jambu Biji": {"generator": generate_guava_data, "icon": " Jambu", "image": "jambu biji.jpg", "positive_outcomes": ["Matang"]},
-    "Sirsak": {"generator": generate_soursop_data, "icon": " Sirsak", "image": "sirsak.jpg", "positive_outcomes": ["Matang"]},
-    "Lengkeng": {"generator": generate_longan_data, "icon": " Lengkeng", "image": "lengkeng.jpg", "positive_outcomes": ["Manis"]},
-    "Pepaya": {"generator": generate_papaya_data, "icon": " Papaya", "image": "pepaya.jpg", "positive_outcomes": ["Matang"]},
+    "Manggis": {"generator": generate_mangosteen_data, "icon": "🟣", "image": "manggis.jpg", "positive_outcomes": ["Manis"]},
+    "Jambu Biji": {"generator": generate_guava_data, "icon": "🍈", "image": "jambu biji.jpg", "positive_outcomes": ["Matang"]},
+    "Sirsak": {"generator": generate_soursop_data, "icon": "🟢", "image": "sirsak.jpg", "positive_outcomes": ["Matang"]},
+    "Lengkeng": {"generator": generate_longan_data, "icon": "🟤", "image": "lengkeng.jpg", "positive_outcomes": ["Manis"]},
+    "Pepaya": {"generator": generate_papaya_data, "icon": "🟠", "image": "pepaya.jpg", "positive_outcomes": ["Matang"]},
     "Buah Naga": {"generator": generate_dragonfruit_data, "icon": "🐉", "image": "buah naga.jpg", "positive_outcomes": ["Manis"]},
-    "Duku": {"generator": generate_duku_data, "icon": " Duku", "image": "duku.jpg", "positive_outcomes": ["Manis"]},
-    "Sawo": {"generator": generate_sapodilla_data, "icon": " Sawo", "image": "sawo.jpg", "positive_outcomes": ["Matang"]},
-    "Kedondong": {"generator": generate_kedondong_data, "icon": " Kedondong", "image": "kedondong.jpg", "positive_outcomes": ["Asam"]},
-    "Jambu Bol": {"generator": generate_jambu_bol_data, "icon": " Jambu Bol", "image":  "jambu bol.jpg", "positive_outcomes": ["Manis"]},
-    "Nangka": {"generator": generate_jackfruit_data, "icon": " Nangka", "image": "nangka.jpg", "positive_outcomes": ["Matang"]},
+    "Duku": {"generator": generate_duku_data, "icon": "🟡", "image": "duku.jpg", "positive_outcomes": ["Manis"]},
+    "Sawo": {"generator": generate_sapodilla_data, "icon": "🟤", "image": "sawo.jpg", "positive_outcomes": ["Matang"]},
+    "Kedondong": {"generator": generate_kedondong_data, "icon": "🟢", "image": "kedondong.jpg", "positive_outcomes": ["Asam"]},
+    "Jambu Bol": {"generator": generate_jambu_bol_data, "icon": "🔴", "image":  "jambu bol.jpg", "positive_outcomes": ["Manis"]},
+    "Nangka": {"generator": generate_jackfruit_data, "icon": "🟡", "image": "nangka.jpg", "positive_outcomes": ["Matang"]},
 }
 
 # ==========================================
@@ -541,6 +541,7 @@ with st.sidebar:
     else:
         st.subheader(f"Klasifikasi {selected_fruit}")
 
+    
 # Memuat data berdasarkan buah yang dipilih
 df_original = fruit_config["generator"]()
 
@@ -576,6 +577,16 @@ with st.sidebar:
 if menu == "Dashboard & Teori":
     st.title(f"{fruit_config['icon']} Aplikasi Klasifikasi Kualitas {selected_fruit} Menggunakan Naive Bayes")
     st.subheader("Selamat Datang di Projek Proyek Kelompok 4")
+
+    # Tampilkan gambar buah yang dipilih di halaman utama, bukan di sidebar
+    if fruit_config["image"]:
+        col_img, col_text = st.columns([1, 2])
+        with col_img:
+            try:
+                st.image(fruit_config["image"], use_container_width=True)
+            except Exception:
+                st.write(f"Gambar untuk {selected_fruit} tidak ditemukan.")
+
     
     st.markdown("""
     Aplikasi ini dirancang untuk mengklasifikasikan kualitas buah (saat ini **{selected_fruit}**) berdasarkan fitur fisiknya. 
